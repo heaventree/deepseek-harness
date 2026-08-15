@@ -127,9 +127,9 @@ function matches(record: ProjectMemoryRecord, terms: readonly string[]): boolean
   return terms.every(term => haystack.includes(term))
 }
 
-/** Sort returned records newest first, with id as a deterministic tie-breaker. */
+/** Sort returned records by parsed instant, with id as a deterministic tie-breaker. */
 function compareRecords(left: ProjectMemoryRecord, right: ProjectMemoryRecord): number {
-  return right.recordedAt.localeCompare(left.recordedAt) || left.id.localeCompare(right.id)
+  return Date.parse(right.recordedAt) - Date.parse(left.recordedAt) || left.id.localeCompare(right.id)
 }
 
 /**

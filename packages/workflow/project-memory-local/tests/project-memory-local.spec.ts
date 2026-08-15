@@ -6,12 +6,16 @@ import { Context } from '@deepseek-ai/cordis'
 import LocalFileSystem from '@deepseek-ai/dsh-fs-local'
 import LocalProjectMemory from '../src/index.ts'
 
-async function withMemory<T>(path: string, operation: (memory: LocalProjectMemory) => Promise<T>): Promise<T> {
+async function withMemory<T>(
+  path: string,
+  operation: (memory: LocalProjectMemory, fs: LocalFileSystem) => Promise<T>,
+  maxBytes = 4_096,
+): Promise<T> {
   const ctx = new Context()
   await ctx.plugin(LocalFileSystem, { cwd: tmpdir() })
-  await ctx.plugin(LocalProjectMemory, { path, maxBytes: 4_096 })
+  await ctx.plugin(LocalProjectMemory, { path, maxBytes })
   try {
-    return await operation(ctx.projectMemory as LocalProjectMemory)
+    return await operation(ctx.projectMemory as LocalProjectMemory, ctx.fs as LocalFileSystem)
   } finally {
     await ctx.fiber.dispose()
   }
@@ -79,6 +83,43 @@ describe('LocalProjectMemory', () => {
     }
   })
 
+  it('orders equivalent project-memory instants by time rather than timestamp spelling, then by id', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await withMemory(path, async (memory) => {
+        await memory.put({
+          id: 'z-same-instant',
+          kind: 'decision',
+          summary: 'ranking evidence',
+          evidence: [],
+          recordedAt: '2026-08-15T00:00:00.000Z',
+        })
+        await memory.put({
+          id: 'a-same-instant',
+          kind: 'decision',
+          summary: 'ranking evidence',
+          evidence: [],
+          recordedAt: '2026-08-15T01:00:00.000+01:00',
+        })
+        await memory.put({
+          id: 'newer-instant',
+          kind: 'decision',
+          summary: 'ranking evidence',
+          evidence: [],
+          recordedAt: '2026-08-15T00:30:00.000Z',
+        })
+        await expect(memory.search('ranking')).resolves.toMatchObject([
+          { id: 'newer-instant' },
+          { id: 'a-same-instant' },
+          { id: 'z-same-instant' },
+        ])
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('rejects malformed durable data instead of treating it as an empty project memory', async () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
     const path = join(root, 'memory.json')
@@ -90,5 +131,129 @@ describe('LocalProjectMemory', () => {
     } finally {
       await rm(root, { recursive: true, force: true })
     }
+  })
+
+  it('rejects invalid UTF-8 durable data before JSON parsing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await writeFile(path, Buffer.from([0xff]))
+      await withMemory(path, async (memory) => {
+        await expect(memory.search('anything')).rejects.toThrow('must be valid UTF-8 text')
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects a durable document with duplicate record ids', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    const record = {
+      id: 'duplicate',
+      kind: 'decision',
+      summary: 'duplicate evidence',
+      evidence: [],
+      recordedAt: '2026-08-15T00:00:00.000Z',
+    }
+    try {
+      await writeFile(path, `${JSON.stringify({ records: [record, record] })}\n`)
+      await withMemory(path, async (memory) => {
+        await expect(memory.search('duplicate')).rejects.toThrow('duplicate record id')
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses to publish a document that exceeds its configured byte cap', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await withMemory(path, async (memory) => {
+        await expect(memory.put({
+          id: 'oversized',
+          kind: 'decision',
+          summary: 'evidence '.repeat(30),
+          evidence: [],
+          recordedAt: '2026-08-15T00:00:00.000Z',
+        })).rejects.toThrow('exceeds configured 100-byte limit')
+      }, 100)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses to read a durable document that exceeds its configured byte cap', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await writeFile(path, `${JSON.stringify({ records: [], padding: 'x'.repeat(128) })}\n`)
+      await withMemory(path, async (memory) => {
+        await expect(memory.search('anything')).rejects.toMatchObject({ code: 'FS_TOO_LARGE' })
+      }, 100)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('replaces an existing record rather than retaining two versions of its id', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await withMemory(path, async (memory) => {
+        await memory.put({ id: 'replace', kind: 'decision', summary: 'memory before replacement', evidence: [], recordedAt: '2026-08-15T00:00:00.000Z' })
+        await memory.put({ id: 'replace', kind: 'decision', summary: 'memory after replacement', evidence: [], recordedAt: '2026-08-15T00:01:00.000Z' })
+        await expect(memory.search('memory')).resolves.toEqual([{
+          id: 'replace',
+          kind: 'decision',
+          summary: 'memory after replacement',
+          evidence: [],
+          recordedAt: '2026-08-15T00:01:00.000Z',
+        }])
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects a write when another writer changes the document after this provider reads it', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await withMemory(path, async (memory, fs) => {
+        await memory.put({ id: 'first', kind: 'decision', summary: 'race evidence', evidence: [], recordedAt: '2026-08-15T00:00:00.000Z' })
+        const originalWrite = fs.writeText.bind(fs)
+        fs.writeText = async (...args: Parameters<LocalFileSystem['writeText']>) => {
+          await writeFile(path, `${JSON.stringify({ records: [] })}\n`)
+          return originalWrite(...args)
+        }
+        await expect(memory.put({ id: 'second', kind: 'decision', summary: 'race evidence', evidence: [], recordedAt: '2026-08-15T00:01:00.000Z' }))
+          .rejects.toMatchObject({ code: 'FS_STALE_VERSION' })
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('propagates an already-cancelled filesystem request', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    const controller = new AbortController()
+    controller.abort()
+    try {
+      await withMemory(path, async (memory) => {
+        await expect(memory.search('anything', controller.signal)).rejects.toMatchObject({ code: 'FS_ABORTED' })
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects blank paths and non-integer document limits at construction', () => {
+    expect(() => new LocalProjectMemory(new Context(), { path: ' ', maxBytes: 4_096 }))
+      .toThrow('path must not be empty')
+    expect(() => new LocalProjectMemory(new Context(), { path: 'memory.json', maxBytes: 1.5 }))
+      .toThrow('maxBytes must be a positive safe integer')
   })
 })
