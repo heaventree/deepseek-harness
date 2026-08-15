@@ -29,6 +29,6 @@ providers:
 
 ## Known Limitations and Deferred Work
 
-- `@deepseek-ai/dsh-project-git-local` now provides local read-only Git intake and process-local checkpoint retention through the shell seam. A later consumer still owns project-memory persistence, model-visible session events, approval gating, and implementation writes.
+- `@deepseek-ai/dsh-project-git-local` provides local read-only Git intake and process-local checkpoint retention through the shell seam. `@deepseek-ai/dsh-project-memory-local` persists distilled records through the filesystem seam. A later consumer still owns model-visible session events, approval gating, and implementation writes.
 - The adapter interfaces omit credentials, retry policy, and transport details. Each external-system provider owns those concerns.
 - Context token estimates are supplied by callers; exact provider accounting remains owned by `@deepseek-ai/dsh-token-meter`.

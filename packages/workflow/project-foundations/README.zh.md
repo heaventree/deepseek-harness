@@ -29,6 +29,6 @@ providers:
 
 ## 已知限制与延期工作
 
-- `@deepseek-ai/dsh-project-git-local` 现已通过 shell seam 提供本地只读 Git 接入和进程本地检查点保留。后续消费方仍负责项目记忆持久化、模型可见会话事件、批准门控和实现写入。
+- `@deepseek-ai/dsh-project-git-local` 通过 shell seam 提供本地只读 Git 接入和进程本地检查点保留。`@deepseek-ai/dsh-project-memory-local` 通过文件系统 seam 持久化提炼记录。后续消费方仍负责模型可见会话事件、批准门控和实现写入。
 - 适配器接口不包含凭据、重试策略或传输细节。每个外部系统提供方负责这些问题。
 - 上下文 token 估算由调用方提供；精确的提供方计量仍由 `@deepseek-ai/dsh-token-meter` 负责。

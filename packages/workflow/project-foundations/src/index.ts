@@ -119,6 +119,39 @@ export interface ProjectMemoryStore {
   put(record: ProjectMemoryRecord, signal?: AbortSignal): Promise<void>
 }
 
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    projectMemory: ProjectMemoryService
+  }
+}
+
+/**
+ * Service Definition for distilled project-memory retrieval and retention.
+ * Providers own their persistence medium; consumers receive only records, not
+ * raw transcripts or provider storage details.
+ */
+export abstract class ProjectMemoryService extends Service implements ProjectMemoryStore {
+  constructor(ctx: Context) {
+    super(ctx, 'projectMemory')
+  }
+
+  /**
+   * Return records relevant to one planning query.
+   * @param query - The caller's bounded search terms.
+   * @param signal - Cancels the provider read when planning closes.
+   * @returns Detached distilled records relevant to the query.
+   */
+  abstract search(query: string, signal?: AbortSignal): Promise<readonly ProjectMemoryRecord[]>
+
+  /**
+   * Persist one already-distilled project record.
+   * @param record - The durable fact and its repository evidence.
+   * @param signal - Cancels persistence before the provider publishes it.
+   * @returns A promise that resolves after the provider retains a detached copy.
+   */
+  abstract put(record: ProjectMemoryRecord, signal?: AbortSignal): Promise<void>
+}
+
 /** Minimal RepoHive request and response vocabulary. */
 export interface RepoHiveAdapter {
   /** Retrieves relevant graded repository evidence for an intake and task. */

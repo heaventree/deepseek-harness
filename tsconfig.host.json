@@ -268,6 +268,7 @@
     { "path": "./packages/workflow/workflow" },
     { "path": "./packages/workflow/project-foundations" },
     { "path": "./packages/workflow/project-git-local" },
+    { "path": "./packages/workflow/project-memory-local" },
     { "path": "./packages/workflow/workflow-worker-thread" },
     { "path": "./packages/workflow/tool-workflow" },
     { "path": "./packages/workflow/tool-ralph" },

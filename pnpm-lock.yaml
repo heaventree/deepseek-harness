@@ -8146,6 +8146,28 @@ importers:
         specifier: workspace:^
         version: link:../../shell/shell
 
+  packages/workflow/project-memory-local:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-fs':
+        specifier: workspace:^
+        version: link:../../fs/fs
+      '@deepseek-ai/dsh-fs-local':
+        specifier: workspace:^
+        version: link:../../fs/fs-local
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-project-foundations':
+        specifier: workspace:^
+        version: link:../project-foundations
+
   packages/workflow/tool-ralph:
     dependencies:
       '@deepseek-ai/schemastery':
