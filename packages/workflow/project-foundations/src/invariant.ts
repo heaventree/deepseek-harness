@@ -11,7 +11,7 @@ export const name = 'project-foundations-invariant'
 /** Service required before the companion can reserve package ownership. */
 export const inject = ['invariants']
 
-/** No runtime invariant exists until a provider owns mutable project state. */
+/** No runtime invariant: a provider owns mutable project state. */
 const install: InvariantInstaller = () => {}
 
 /**
