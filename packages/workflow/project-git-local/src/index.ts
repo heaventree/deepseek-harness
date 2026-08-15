@@ -136,7 +136,8 @@ export class LocalGitProjectIntake extends ProjectIntakeService {
   }
 
   /**
-   * Collect a consistent Git intake from `request.root` through `ctx.shell`.
+   * Collect a Git intake from `request.root` through `ctx.shell`, rejecting a
+   * checked-out commit that changes while the observations run.
    * @param request - The local worktree root and optional cancellation signal.
    * @returns A detached local-repository intake record.
    */
@@ -149,13 +150,13 @@ export class LocalGitProjectIntake extends ProjectIntakeService {
     const [branch, remotes, branches, status] = await Promise.all([
       this.git(request, 'git branch --show-current'),
       this.git(request, 'git remote -v'),
-      this.git(request, 'git branch --format="%(refname:short)"'),
+      this.git(request, 'git branch --all --format="%(refname:short)"'),
       this.git(request, 'git status --porcelain=v1 -z'),
     ])
     const lastHead = (await this.git(request, 'git rev-parse HEAD')).trim()
     const observedRoot = root.trim()
     if (observedRoot === '' || firstHead.trim() === '' || firstHead.trim() !== lastHead) {
-      throw new Error('project-git-local: repository changed while collecting intake')
+      throw new Error('project-git-local: repository HEAD changed while collecting intake')
     }
     const observedBranch = branch.trim()
     return createProjectIntake({

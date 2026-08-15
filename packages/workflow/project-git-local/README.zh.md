@@ -7,7 +7,7 @@
 ## 行为
 
 - `inspect()` 以请求的 worktree 作为 `workdir`，通过 `ctx.shell.resolve()` 和 `ctx.shell.run()` 运行固定的只读 Git 命令。
-- 接入记录当前提交、已附着时的已检出分支、已配置远程、本地分支和 porcelain status 路径。它拒绝输出被截断、非零退出、被取消或在收集期间提交发生变化的 Git 结果。
+- 接入记录当前提交、已附着时的已检出分支、已配置远程、本地和远程分支以及 porcelain status 路径。它拒绝输出被截断、非零退出、被取消或在收集期间已检出提交发生变化的 Git 结果。
 - 在成为规划证据之前，会从 HTTP 远程 URL 中移除 userinfo。该 provider 从不启动后台进程。
 - `save()` 和 `get()` 保留并返回分离的内存检查点副本。它们不创建 ref、提交、分支、tag 或文件。
 

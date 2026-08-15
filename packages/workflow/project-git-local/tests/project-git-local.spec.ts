@@ -75,7 +75,7 @@ describe('LocalGitProjectIntake', () => {
     shell.responses.set('git rev-parse HEAD', result('abc123\n'))
     shell.responses.set('git branch --show-current', result('agent/phase-1\n'))
     shell.responses.set('git remote -v', result('origin\thttps://example.test/repo.git (fetch)\norigin\thttps://example.test/repo.git (push)\n'))
-    shell.responses.set('git branch --format="%(refname:short)"', result('main\nagent/phase-1\n'))
+    shell.responses.set('git branch --all --format="%(refname:short)"', result('main\nagent/phase-1\norigin/main\norigin/phase-1\n'))
     shell.responses.set('git status --porcelain=v1 -z', result(' M src/a.ts\0?? notes.md\0'))
 
     await expect(intake.inspect({ root: '/repo/packages/leaf' })).resolves.toEqual({
@@ -85,7 +85,7 @@ describe('LocalGitProjectIntake', () => {
         branch: 'agent/phase-1',
         head: 'abc123',
         remotes: [{ name: 'origin', url: 'https://example.test/repo.git' }],
-        branches: ['agent/phase-1', 'main'],
+        branches: ['agent/phase-1', 'main', 'origin/main', 'origin/phase-1'],
         changedPaths: ['notes.md', 'src/a.ts'],
       },
     })
@@ -94,7 +94,7 @@ describe('LocalGitProjectIntake', () => {
       expect(spec.workdir).toBe('/repo/packages/leaf')
       expect(spec.timeoutMs).toBe(500)
       expect(spec.stdoutMaxBytes).toBe(4096)
-      expect(spec.command).toMatch(/^git (rev-parse --show-toplevel|rev-parse HEAD|branch --show-current|remote -v|branch --format="%\(refname:short\)"|status --porcelain=v1 -z)$/)
+      expect(spec.command).toMatch(/^git (rev-parse --show-toplevel|rev-parse HEAD|branch --show-current|remote -v|branch --all --format="%\(refname:short\)"|status --porcelain=v1 -z)$/)
     }
   })
 

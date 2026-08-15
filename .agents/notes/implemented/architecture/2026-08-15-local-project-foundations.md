@@ -14,7 +14,7 @@ Phase 1 needs Git-aware project intake, bounded context selection, model-tier de
 
 Project-memory storage and RepoHive, HT AI Brain, Niimo, and super-router integrations are interfaces. Their providers own credentials, HTTP, retries, persistence, and deployment policy. LM Studio remains a configured route of the existing pi-ai adapter rather than receiving a parallel provider.
 
-`@deepseek-ai/dsh-project-git-local` is the local Git Service Provider. It reads fixed Git evidence only through `ctx.shell`, redacts HTTP URL userinfo, rejects incomplete or changing observations, and retains detached in-memory checkpoint anchors without creating a ref, commit, branch, tag, or file.
+`@deepseek-ai/dsh-project-git-local` is the local Git Service Provider. It reads fixed Git evidence only through `ctx.shell`, includes local and remote branch names, redacts HTTP URL userinfo, rejects incomplete observations or a checked-out commit that changes during collection, and retains detached in-memory checkpoint anchors without creating a ref, commit, branch, tag, or file.
 
 ## Alternatives considered
 

@@ -7,7 +7,7 @@ This package is the local Git Service Provider for `@deepseek-ai/dsh-project-fou
 ## Behavior
 
 - `inspect()` runs fixed, read-only Git commands through `ctx.shell.resolve()` and `ctx.shell.run()` with the requested worktree as `workdir`.
-- Intake records the current commit, checked-out branch when attached, configured remotes, local branches, and porcelain-status paths. It rejects a Git result with truncated output, a nonzero exit, cancellation, or a commit that changes during collection.
+- Intake records the current commit, checked-out branch when attached, configured remotes, local and remote branches, and porcelain-status paths. It rejects a Git result with truncated output, a nonzero exit, cancellation, or a checked-out commit that changes during collection.
 - HTTP remote URL userinfo is removed before it becomes planning evidence. The provider never starts background processes.
 - `save()` and `get()` retain and return detached in-memory checkpoint copies. They do not create refs, commits, branches, tags, or files.
 

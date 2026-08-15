@@ -14,7 +14,7 @@ Phase 1 需要 Git 感知的项目接入、有预算上限的上下文选择、�
 
 项目记忆存储以及 RepoHive、HT AI Brain、Niimo 和 super-router 集成均为接口。其提供方负责凭据、HTTP、重试、持久化和部署策略。LM Studio 仍是现有 pi-ai 适配器的已配置路由，而非并行提供方。
 
-`@deepseek-ai/dsh-project-git-local` 是本地 Git Service Provider。它仅通过 `ctx.shell` 读取固定 Git 证据，移除 HTTP URL userinfo，拒绝不完整或收集期间变化的观察结果，并保留分离的内存检查点锚点，不创建 ref、提交、分支、tag 或文件。
+`@deepseek-ai/dsh-project-git-local` 是本地 Git Service Provider。它仅通过 `ctx.shell` 读取固定 Git 证据，包含本地和远程分支名称，移除 HTTP URL userinfo，拒绝不完整的观察结果或收集期间已检出提交发生变化的情况，并保留分离的内存检查点锚点，不创建 ref、提交、分支、tag 或文件。
 
 ## 考虑过的替代方案
 
