@@ -133,6 +133,28 @@ describe('LocalProjectMemory', () => {
     }
   })
 
+  it.each([
+    ['invalid JSON', '{', 'must contain valid JSON'],
+    ['a document without records', JSON.stringify({}), 'document.records must be an array'],
+    ['a non-object record', JSON.stringify({ records: [null] }), 'records[0] must be an object'],
+    ['a record without an identifier', JSON.stringify({ records: [{ id: '', kind: 'decision', summary: 'summary', evidence: [], recordedAt: '2026-08-15T00:00:00.000Z' }] }), 'records[0].id must be a non-empty string'],
+    ['a record with an unsupported kind', JSON.stringify({ records: [{ id: 'record', kind: 'raw-transcript', summary: 'summary', evidence: [], recordedAt: '2026-08-15T00:00:00.000Z' }] }), 'records[0].kind is not supported'],
+    ['a record without a distilled summary', JSON.stringify({ records: [{ id: 'record', kind: 'decision', summary: ' ', evidence: [], recordedAt: '2026-08-15T00:00:00.000Z' }] }), 'records[0].summary must be a non-empty string'],
+    ['a record with non-text evidence', JSON.stringify({ records: [{ id: 'record', kind: 'decision', summary: 'summary', evidence: [42], recordedAt: '2026-08-15T00:00:00.000Z' }] }), 'records[0].evidence must be an array of strings'],
+    ['a record with an invalid timestamp', JSON.stringify({ records: [{ id: 'record', kind: 'decision', summary: 'summary', evidence: [], recordedAt: 'not-a-time' }] }), 'records[0].recordedAt must be an ISO-8601 timestamp'],
+  ])('rejects %s at the durable JSON boundary', async (_name, document, expected) => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await writeFile(path, `${document}\n`)
+      await withMemory(path, async (memory) => {
+        await expect(memory.search('record')).rejects.toThrow(expected)
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('rejects invalid UTF-8 durable data before JSON parsing', async () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
     const path = join(root, 'memory.json')
@@ -250,10 +272,44 @@ describe('LocalProjectMemory', () => {
     }
   })
 
+  it('rejects blank planning queries after reading the configured project memory', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    try {
+      await withMemory(path, async (memory) => {
+        await expect(memory.search(' \t ')).rejects.toThrow('query must include at least one non-whitespace term')
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('propagates cancellation before a project-memory write begins', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-project-memory-'))
+    const path = join(root, 'memory.json')
+    const controller = new AbortController()
+    controller.abort()
+    try {
+      await withMemory(path, async (memory) => {
+        await expect(memory.put({
+          id: 'cancelled',
+          kind: 'decision',
+          summary: 'cancelled write',
+          evidence: [],
+          recordedAt: '2026-08-15T00:00:00.000Z',
+        }, controller.signal)).rejects.toMatchObject({ code: 'FS_ABORTED' })
+      })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('rejects blank paths and non-integer document limits at construction', () => {
     expect(() => new LocalProjectMemory(new Context(), { path: ' ', maxBytes: 4_096 }))
       .toThrow('path must not be empty')
     expect(() => new LocalProjectMemory(new Context(), { path: 'memory.json', maxBytes: 1.5 }))
+      .toThrow('maxBytes must be a positive safe integer')
+    expect(() => new LocalProjectMemory(new Context(), { path: 'memory.json', maxBytes: 0 }))
       .toThrow('maxBytes must be a positive safe integer')
   })
 })
