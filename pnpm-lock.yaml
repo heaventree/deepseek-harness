@@ -542,6 +542,15 @@ importers:
       '@deepseek-ai/dsh-plan-mode':
         specifier: workspace:*
         version: link:../packages/plan/plan-mode
+      '@deepseek-ai/dsh-project-git-local':
+        specifier: workspace:*
+        version: link:../packages/workflow/project-git-local
+      '@deepseek-ai/dsh-project-memory-local':
+        specifier: workspace:*
+        version: link:../packages/workflow/project-memory-local
+      '@deepseek-ai/dsh-project-planning':
+        specifier: workspace:*
+        version: link:../packages/workflow/project-planning
       '@deepseek-ai/dsh-pwsh-local':
         specifier: workspace:*
         version: link:../packages/shell/pwsh-local
