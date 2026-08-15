@@ -8168,6 +8168,18 @@ importers:
         specifier: workspace:^
         version: link:../project-foundations
 
+  packages/workflow/project-planning:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-project-foundations':
+        specifier: workspace:^
+        version: link:../project-foundations
+
   packages/workflow/tool-ralph:
     dependencies:
       '@deepseek-ai/schemastery':
