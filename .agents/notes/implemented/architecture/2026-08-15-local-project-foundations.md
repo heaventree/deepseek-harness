@@ -14,6 +14,8 @@ Phase 1 needs Git-aware project intake, bounded context selection, model-tier de
 
 Project-memory storage and RepoHive, HT AI Brain, Niimo, and super-router integrations are interfaces. Their providers own credentials, HTTP, retries, persistence, and deployment policy. LM Studio remains a configured route of the existing pi-ai adapter rather than receiving a parallel provider.
 
+`@deepseek-ai/dsh-project-git-local` is the local Git Service Provider. It reads fixed Git evidence only through `ctx.shell`, redacts HTTP URL userinfo, rejects incomplete or changing observations, and retains detached in-memory checkpoint anchors without creating a ref, commit, branch, tag, or file.
+
 ## Alternatives considered
 
 - **Add behavior to `agent-loop`** — rejected because repository acquisition and planning are optional capabilities, and the architecture requires plugins rather than loop changes.
@@ -22,4 +24,4 @@ Project-memory storage and RepoHive, HT AI Brain, Niimo, and super-router integr
 
 ## Consequences
 
-Later providers can execute Git through the shell seam and persist memory through a local store without changing planning decisions. A later Cordis consumer must log model-visible context through session events and provide assembled composition coverage before becoming a shipped capability.
+The local Git provider remains swappable and cannot bypass the configured shell executor. A later memory provider can persist distilled records without changing planning decisions. A later Cordis consumer must log model-visible context through session events and provide assembled composition coverage before becoming a shipped capability.

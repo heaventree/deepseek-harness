@@ -29,6 +29,6 @@ providers:
 
 ## 已知限制与延期工作
 
-- 尚未挂载 Cordis 插件或默认组合。后续消费者将通过 shell seam 负责 Git 执行，通过项目记忆提供方负责持久化，并负责模型可见的会话事件。
+- `@deepseek-ai/dsh-project-git-local` 现已通过 shell seam 提供本地只读 Git 接入和进程本地检查点保留。后续消费方仍负责项目记忆持久化、模型可见会话事件、批准门控和实现写入。
 - 适配器接口不包含凭据、重试策略或传输细节。每个外部系统提供方负责这些问题。
 - 上下文 token 估算由调用方提供；精确的提供方计量仍由 `@deepseek-ai/dsh-token-meter` 负责。

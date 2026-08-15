@@ -29,6 +29,6 @@ providers:
 
 ## Known Limitations and Deferred Work
 
-- No Cordis plugin or default composition is mounted yet. A later consumer owns Git execution through the shell seam, persistence through a project-memory provider, and model-visible session events.
+- `@deepseek-ai/dsh-project-git-local` now provides local read-only Git intake and process-local checkpoint retention through the shell seam. A later consumer still owns project-memory persistence, model-visible session events, approval gating, and implementation writes.
 - The adapter interfaces omit credentials, retry policy, and transport details. Each external-system provider owns those concerns.
 - Context token estimates are supplied by callers; exact provider accounting remains owned by `@deepseek-ai/dsh-token-meter`.

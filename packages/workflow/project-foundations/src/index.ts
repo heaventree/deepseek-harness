@@ -1,5 +1,7 @@
 /** Deterministic planning primitives for local-first project work. @module @deepseek-ai/dsh-project-foundations */
 
+import { Context, Service } from '@deepseek-ai/cordis'
+
 /** One source from which a project can be acquired without mixing working trees. */
 export type ProjectSourceKind = 'local-repository' | 'remote-clone' | 'remote-connection' | 'public-inspection'
 
@@ -153,6 +155,66 @@ export interface ProjectCheckpoint {
   branch: string
   /** ISO-8601 creation time supplied by the caller. */
   createdAt: string
+}
+
+/** Parameters for inspecting one already-local Git worktree. */
+export interface ProjectIntakeRequest {
+  /** Absolute directory from which the configured Git provider reads. */
+  root: string
+  /** Stops the provider's read-only Git commands when the planning request closes. */
+  signal?: AbortSignal
+}
+
+/** Read-only project acquisition role of the project-intake capability seam. */
+export interface ProjectIntakeProvider {
+  /** Collects one detached intake record for a local Git worktree. */
+  inspect(request: ProjectIntakeRequest): Promise<ProjectIntake>
+}
+
+/** Checkpoint-retention role of the project-intake capability seam. */
+export interface ProjectCheckpointStore {
+  /** Retains a detached checkpoint under its caller-chosen identifier. */
+  save(checkpoint: ProjectCheckpoint): Promise<void>
+  /** Returns a detached checkpoint, when one was retained for the identifier. */
+  get(id: string): Promise<ProjectCheckpoint | undefined>
+}
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    projectIntake: ProjectIntakeService
+  }
+}
+
+/**
+ * Service Definition for local project acquisition and checkpoint retention.
+ * Service Providers own their Git execution and storage mechanisms; planning
+ * consumers receive immutable intake facts and anchors only.
+ */
+export abstract class ProjectIntakeService extends Service implements ProjectIntakeProvider, ProjectCheckpointStore {
+  constructor(ctx: Context) {
+    super(ctx, 'projectIntake')
+  }
+
+  /**
+   * Inspect one local Git worktree without changing its state.
+   * @param request - The root directory and optional cancellation signal.
+   * @returns A detached Git-aware project intake.
+   */
+  abstract inspect(request: ProjectIntakeRequest): Promise<ProjectIntake>
+
+  /**
+   * Retain a checkpoint for a later planning or verification consumer.
+   * @param checkpoint - The caller-created anchor to retain.
+   * @returns A promise that resolves after the store owns a detached copy.
+   */
+  abstract save(checkpoint: ProjectCheckpoint): Promise<void>
+
+  /**
+   * Load a retained checkpoint without exposing store-owned mutable state.
+   * @param id - The caller-chosen checkpoint identifier.
+   * @returns A detached checkpoint, or `undefined` when none exists.
+   */
+  abstract get(id: string): Promise<ProjectCheckpoint | undefined>
 }
 
 /** Verification work required for a scoped change. */
