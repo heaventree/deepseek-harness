@@ -5,7 +5,7 @@ describe('project foundations', () => {
   it('copies Git evidence without retaining caller-owned arrays', () => {
     const remotes = [{ name: 'origin', url: 'https://example.test/repo.git' }]
     const intake = createProjectIntake({ source: 'local-repository', root: '/repo', git: { remotes, changedPaths: ['a.ts'], branches: ['main'] } })
-    remotes[0].url = 'https://example.test/changed.git'
+    remotes[0]!.url = 'https://example.test/changed.git'
     expect(intake.git.remotes[0]).toEqual({ name: 'origin', url: 'https://example.test/repo.git' })
   })
 
@@ -17,7 +17,7 @@ describe('project foundations', () => {
     ])
     expect(pack.usedTokens).toBe(10)
     expect(pack.selected.map((candidate) => candidate.id)).toEqual(['task', 'decision'])
-    expect(pack.selected[0].reason).toBe('required')
+    expect(pack.selected[0]!.reason).toBe('required')
     expect(pack.omitted).toEqual(['large'])
   })
 
